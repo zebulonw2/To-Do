@@ -1,0 +1,5 @@
+peewee~=3.14.10
+setuptools~=57.4.0
+loguru~=0.6.0
+pytest-cov
+pytest~=7.1.2
