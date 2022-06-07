@@ -5,8 +5,8 @@ import os
 import sys
 from loguru import logger
 import peewee as pw
-import models as m
-from validator import val_priority, val_due, val_start, val_sys_args
+import src.models as m
+from src. validator import val_priority, val_due, val_start, val_sys_args
 
 
 # logger.remove()
@@ -35,12 +35,20 @@ def add_contributor(name, role):
 
 def delete_contributor(name):
     """
-    Deletes contributor
+    Deletes contributor and Associated Tasks
     """
     try:
-        row = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
-        row.DELETED = True
-        logger.info(f"Contributor Deleted: " f"{row.NAME, row.ROLE, row.DELETED}")
+        c = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
+        c.DELETED = True
+        logger.info(f"Contributor Deleted: " f"{c.NAME, c.ROLE, c.DELETED}")
+        task_query = (
+            m.TasksDb.select(m.TasksDb, m.ContributorsDB)
+            .join(m.ContributorsDB)
+            .where(m.ContributorsDB.NAME == name)
+        )
+        for row in task_query:
+            row.DELETED = True
+        logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
         return True
     except pw.IntegrityError:
         logger.error(f"'{name}' Not Found in DB")
@@ -130,18 +138,7 @@ def list_tasks(status_id):
     """
     Searches for a status in status_collection
     """
-    try:
-        row = m.StatusDb.get(m.StatusDb.STATUS_ID == status_id)
-        print(
-            f"Status Found:\n"
-            f"Status ID: {row.STATUS_ID}\n"
-            f"User ID: {row.USER_ID}\n"
-            f"Status Text: {row.STATUS_TEXT}"
-        )
-        return True
-    except m.StatusDb.DoesNotExist:
-        logger.error(f"'{status_id}' Not Found in DB")
-        return False
+    pass
 
 
 def main() -> None:

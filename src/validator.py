@@ -4,7 +4,7 @@ Validates CLI Arguments
 import sys
 import datetime
 from loguru import logger
-from errors import DateFormatError, PriorityError
+from src.errors import DateFormatError, PriorityError
 
 
 def val_sys_args():
