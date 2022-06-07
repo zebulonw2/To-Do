@@ -38,9 +38,12 @@ def val_sys_args():
             logger.error(args)
             raise SystemExit("Usage: main delete_task task_number")
     if args[0] == methods[6]:
-        if len(args) != 2:
+        sort_field = args[2]
+        sort_fields = ["num", "owner", "name", "priority", "start", "due", "finished", "deleted"]
+        if len(args) != 2 or sort_field not in sort_fields:
             logger.error(args)
-            raise SystemExit("Usage: main list_tasks sort_by")
+            raise SystemExit(f"Usage: main list_tasks sort_by={sort_fields}")
+
     if args[0] not in methods:
         logger.error(args)
         raise SystemExit("Usage: main [add_contributor] [delete_contributor] [add_task] "

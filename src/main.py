@@ -3,9 +3,12 @@ main driver for a simple social network project
 """
 import os
 import sys
+
+import pysnooper
 from loguru import logger
 import peewee as pw
 import src.models as m
+import validator
 from src. validator import val_priority, val_due, val_start, val_sys_args
 
 
@@ -46,9 +49,11 @@ def delete_contributor(name):
             .join(m.ContributorsDB)
             .where(m.ContributorsDB.NAME == name)
         )
-        for row in task_query:
-            row.DELETED = True
-        logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
+        if len(task_query) > 0:
+            for row in task_query:
+                row.DELETED = True
+            logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
+            return True
         return True
     except pw.IntegrityError:
         logger.error(f"'{name}' Not Found in DB")
@@ -88,7 +93,7 @@ def add_task(task_owner, task_name, description, priority, start, due):
         return False
 
 
-def update_task(task_num, task_name=None, task_description=None):
+def update_task(task_num, task_name=None, task_description=None, priority=None):
     """
     Updates Task Information
     """
@@ -98,8 +103,11 @@ def update_task(task_num, task_name=None, task_description=None):
             row.NAME = task_name
         if task_description:
             row.DESCRIPTION = task_description
+        if priority:
+            validator.val_priority(priority)
+            row.PRIORITY = priority
         logger.info(f"Task '{task_num}' Changed. "
-                    f"Name: '{row.NAME}' Description: {row.DESCRIPTION}")
+                    f"Name: '{row.NAME}' Description: {row.DESCRIPTION} Priority: '{row.PRIORITY}'")
         return True
     except m.TasksDb.DoesNotExist:
         logger.error(f"'{task_num}' Not Found in DB")
@@ -134,11 +142,23 @@ def delete_task(task_num):
         raise m.TasksDb.DoesNotExist
 
 
-def list_tasks(status_id):
+def list_tasks(sort_field=None):
     """
-    Searches for a status in status_collection
+    Lists Task on Entered Sort Field, Default Sorts by Task Number
     """
-    pass
+    validator.val_sys_args()
+    if len(m.TasksDb) == 0:
+        raise SystemExit("Task DB Empty")
+
+    field = "m.TasksDb." + sort_field
+    print(f"Sorted by {sort_field}")
+    task_query = (
+        m.TasksDb.select().order_by(field)
+    )
+    for row in task_query:
+        logger.info(row)
+        print(row)
+    return True
 
 
 def main() -> None:
