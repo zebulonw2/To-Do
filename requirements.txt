@@ -3,3 +3,5 @@ setuptools~=57.4.0
 loguru~=0.6.0
 pytest-cov
 pytest~=7.1.2
+PySnooper~=1.1.1
+texttable~=1.6.4

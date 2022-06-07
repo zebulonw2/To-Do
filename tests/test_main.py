@@ -2,19 +2,40 @@
 Unit Test for main.py
 """
 import unittest
+
+import loguru
 import peewee as pw
 import pytest
 import src.validator
 import src.main
 import src.errors
 from src.models import ContributorsDB, TasksDb
+from unittest.mock import patch
+import sys
 
 MODELS = (ContributorsDB, TasksDb)
 test_db = pw.SqliteDatabase(":memory:")
 
 
-class TestValidator(unittest.TestCase):
+class TestValidator(unittest.TestCase): #todo make sure all are tested
     """Tests Validation Methods"""
+
+    def test_sys_args_good(self):
+        args = ["main", "add_contributor", "zeb", "tester"]
+        with patch.object(sys, 'argv', args):
+            self.assertEqual(src.validator.val_sys_args(args[1:]), True)
+
+    def test_sys_args_missing_args(self):
+        args = ["main", "add_contributor"]
+        with patch.object(sys, 'argv', args):
+            with pytest.raises(SystemExit) as error:
+                self.assertEqual(src.validator.val_sys_args(args[1:]), str(error.value))
+
+    def test_sys_args_no_method(self):
+        args = ["main"]
+        with patch.object(sys, 'argv', args):
+            with pytest.raises(SystemExit) as error:
+                self.assertEqual(src.validator.val_sys_args(args[1:]), str(error.value))
 
     def test_start_good(self):
         self.assertEqual(src.validator.val_start("2022-06-06"), True)
@@ -50,6 +71,8 @@ class TestValidator(unittest.TestCase):
 
     def test_priority_bad(self):
         with pytest.raises(src.errors.PriorityError) as error:
+            self.assertEqual(src.validator.val_priority("low p"),
+                             str(error.value))
             self.assertEqual(src.validator.val_priority(""),
                              str(error.value))
 
@@ -93,6 +116,8 @@ class TestMain(unittest.TestCase):
         src.main.add_task("zeb", "test name", "test description", "high",
                           "2020-01-01", "2022-01-01")
         self.assertEqual(src.main.update_task("1", priority="low"), True)
+        task = TasksDb.get(TasksDb.NUM == "1")
+        print(task.NAME, task.DESCRIPTION, task.PRIORITY)
 
     def test_update_priority_bad(self):
         src.main.add_contributor("zeb", "tester")
@@ -145,22 +170,72 @@ class TestMain(unittest.TestCase):
         with pytest.raises(TasksDb.DoesNotExist) as error:
             self.assertEqual(src.main.delete_task(""), str(error.value))
 
-    def test_list_num(self):
+    def tearDown(self) -> None:
+        test_db.drop_tables(MODELS)
+        test_db.close()
+
+
+class TestList(unittest.TestCase):
+    """Tests Listing Function"""
+    def setUp(self) -> None:
+        for model in MODELS:
+            model.bind(test_db, bind_refs=False, bind_backrefs=False)
+        test_db.create_tables(MODELS)
         src.main.add_contributor("john", "writer")
         src.main.add_contributor("zeb", "tester")
-        src.main.add_task("john", "write code", "test description", "high",
-                          "2020-01-01", "2022-01-01")
-        src.main.add_task("zeb", "write tests", "test description", "low",
+        src.main.add_task("zeb", "c test", "a description", "low pri",
+                          "2021-01-01", "2023-01-01")
+        src.main.add_task("zeb", "a test", "another description", "medium",
                           "2020-01-02", "2022-01-02")
+        src.main.add_task("john", "b test", "test description", "high",
+                          "2020-01-03", "2022-01-03")
         src.main.mark_task_complete("2")
         src.main.delete_task("2")
-        self.assertEqual(src.main.list_tasks(sort_field="num"), True)
+
+    def test_list_default(self):
+        task_list = src.main.list_tasks()
+        first_row = task_list[0]
+        assert first_row[0] == "1"
+
+    def test_list_num(self):
+        task_list = src.main.list_tasks(sort="Num")
+        first_row = task_list[0]
+        assert first_row[0] == "1"
+
+    def test_list_owner(self):
+        task_list = src.main.list_tasks(sort="Owner")
+        first_row = task_list[0]
+        assert first_row[1] == "john"
 
     def test_list_name(self):
-        pass
+        task_list = src.main.list_tasks(sort="Name")
+        first_row = task_list[0]
+        assert first_row[2] == "a test"
 
-    def test_list_bad(self):
-        pass
+    def test_list_priority(self): #todo get values to update
+        task_list = src.main.list_tasks(sort="Priority")
+        first_row = task_list[0]
+        assert first_row[3] == "low"
+
+    def test_list_start(self):
+        task_list = src.main.list_tasks(sort="Start")
+        first_row = task_list[0]
+        assert first_row[5] == "2020-01-02"
+
+    def test_list_due(self):
+        task_list = src.main.list_tasks(sort="Due")
+        first_row = task_list[0]
+        assert first_row[6] == "2022-01-02"
+
+    def test_list_finished(self):
+        task_list = src.main.list_tasks(sort="Finished")
+        first_row = task_list[0]
+        assert first_row[7] is False
+
+    def test_list_deleted(self):
+        task_list = src.main.list_tasks(sort="Deleted")
+        first_row = task_list[0]
+        assert first_row[8] is False
 
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
