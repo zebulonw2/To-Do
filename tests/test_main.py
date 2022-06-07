@@ -2,12 +2,8 @@
 Unit Test for main.py
 """
 import unittest
-
-import loguru
 import peewee as pw
 import pytest
-
-import models
 import src.validator
 import src.main
 import src.errors
@@ -88,9 +84,29 @@ class TestMain(unittest.TestCase):
 
     def test_update_description(self):
         src.main.add_contributor("zeb", "tester")
-        src.main.add_task("zeb", "write tests", "test description", "high",
+        src.main.add_task("zeb", "test name", "test description", "high",
                           "2020-01-01", "2022-01-01")
         self.assertEqual(src.main.update_task("1", task_description="new description"), True)
+
+    def test_update_priority_good(self):
+        src.main.add_contributor("zeb", "tester")
+        src.main.add_task("zeb", "test name", "test description", "high",
+                          "2020-01-01", "2022-01-01")
+        self.assertEqual(src.main.update_task("1", priority="low"), True)
+
+    def test_update_priority_bad(self):
+        src.main.add_contributor("zeb", "tester")
+        src.main.add_task("zeb", "test name", "test description", "high",
+                          "2020-01-01", "2022-01-01")
+        with pytest.raises(src.errors.PriorityError) as error:
+            self.assertEqual(src.main.update_task("1", priority=" "), str(error.value))
+
+    def test_update_all(self):
+        src.main.add_contributor("zeb", "tester")
+        src.main.add_task("zeb", "write tests", "test description", "high",
+                          "2020-01-01", "2022-01-01")
+        self.assertEqual(src.main.update_task(
+            "1", task_name="new_name", task_description="new_description", priority="low"), True)
 
     def test_update_not_exist(self):
         self.assertEqual(src.main.update_task("2", task_name=""), False)
@@ -111,7 +127,11 @@ class TestMain(unittest.TestCase):
                           "2020-01-01", "2022-01-01")
         self.assertEqual(src.main.delete_task("1"), True)
 
-    def test_delete_contributor(self):
+    def test_delete_contributor_no_task(self):
+        src.main.add_contributor("zeb", "tester")
+        self.assertEqual(src.main.delete_contributor("zeb"), True)
+
+    def test_delete_contributor_with_task(self):
         src.main.add_contributor("zeb", "tester")
         src.main.add_task("zeb", "write tests", "test description", "high",
                           "2020-01-01", "2022-01-01")
@@ -124,6 +144,23 @@ class TestMain(unittest.TestCase):
     def test_delete_not_exists(self):
         with pytest.raises(TasksDb.DoesNotExist) as error:
             self.assertEqual(src.main.delete_task(""), str(error.value))
+
+    def test_list_num(self):
+        src.main.add_contributor("john", "writer")
+        src.main.add_contributor("zeb", "tester")
+        src.main.add_task("john", "write code", "test description", "high",
+                          "2020-01-01", "2022-01-01")
+        src.main.add_task("zeb", "write tests", "test description", "low",
+                          "2020-01-02", "2022-01-02")
+        src.main.mark_task_complete("2")
+        src.main.delete_task("2")
+        self.assertEqual(src.main.list_tasks(sort_field="num"), True)
+
+    def test_list_name(self):
+        pass
+
+    def test_list_bad(self):
+        pass
 
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
