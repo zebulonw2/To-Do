@@ -17,7 +17,7 @@ MODELS = (ContributorsDB, TasksDb)
 test_db = pw.SqliteDatabase(":memory:")
 
 
-class TestValidator(unittest.TestCase): #todo make sure all are tested
+class TestValidator(unittest.TestCase):  # todo make sure all are tested
     """Tests Validation Methods"""
 
     def test_sys_args_good(self):
@@ -87,17 +87,26 @@ class TestMain(unittest.TestCase):
 
     def test_add_contributor(self):
         """Test Adding Contributor"""
-        self.assertEqual(src.main.add_contributor("zeb", "tester"), True)
+        row = src.main.add_contributor("zeb", "tester")
+        assert row.NAME == "zeb"
+
+    def test_add_contributor_already_exists(self):
+        row = src.main.add_contributor("zeb", "tester")
+        assert row.NAME == "zeb"
+        with pytest.raises(pw.IntegrityError) as error:
+            self.assertEqual(src.main.add_contributor("zeb", "tester"), str(error.value))
 
     def test_add_task(self):
         """Test Adding Status"""
         src.main.add_contributor("zeb", "tester")
-        self.assertEqual(src.main.add_task("zeb", "write tests", "test description", "high",
-                                           "2020-01-01", "2022-01-01"), True)
+        row = src.main.add_task("zeb", "write tests", "test description", "high",
+                                "2020-01-01", "2022-01-01")
+        assert row.NAME == 'write tests'
 
     def test_add_task_no_contributor(self):
-        self.assertEqual(src.main.add_task("", "write tests", "test description", "high",
-                                           "2020-01-01", "2022-01-01"), False)
+        with pytest.raises(ContributorsDB.DoesNotExist) as error:
+            self.assertEqual(src.main.add_task("", "write tests", "test description", "high",
+                                               "2020-01-01", "2022-01-01"), str(error.value))
 
     def test_update_name(self):
         src.main.add_contributor("zeb", "tester")
@@ -140,7 +149,8 @@ class TestMain(unittest.TestCase):
         src.main.add_contributor("zeb", "tester")
         src.main.add_task("zeb", "write tests", "test description", "high",
                           "2020-01-01", "2022-01-01")
-        self.assertEqual(src.main.mark_task_complete("1"), True)
+        row = src.main.mark_task_complete("1")
+        assert row.FINISHED is True
 
     def test_mark_complete_not_exist(self):
         with pytest.raises(TasksDb.DoesNotExist) as error:
@@ -150,7 +160,8 @@ class TestMain(unittest.TestCase):
         src.main.add_contributor("zeb", "tester")
         src.main.add_task("zeb", "write tests", "test description", "high",
                           "2020-01-01", "2022-01-01")
-        self.assertEqual(src.main.delete_task("1"), True)
+        row = src.main.delete_task("1")
+        assert row.DELETED is True
 
     def test_delete_contributor_no_task(self):
         src.main.add_contributor("zeb", "tester")
@@ -160,7 +171,7 @@ class TestMain(unittest.TestCase):
         src.main.add_contributor("zeb", "tester")
         src.main.add_task("zeb", "write tests", "test description", "high",
                           "2020-01-01", "2022-01-01")
-        self.assertEqual(src.main.delete_contributor("zeb"), True)
+        row = src.main.delete_contributor("zeb")
 
     def test_delete_contributor_not_exist(self):
         with pytest.raises(ContributorsDB.DoesNotExist) as error:
@@ -177,6 +188,7 @@ class TestMain(unittest.TestCase):
 
 class TestList(unittest.TestCase):
     """Tests Listing Function"""
+
     def setUp(self) -> None:
         for model in MODELS:
             model.bind(test_db, bind_refs=False, bind_backrefs=False)
@@ -212,7 +224,7 @@ class TestList(unittest.TestCase):
         first_row = task_list[0]
         assert first_row[2] == "a test"
 
-    def test_list_priority(self): #todo get values to update
+    def test_list_priority(self):  # todo get values to update
         task_list = src.main.list_tasks(sort="Priority")
         first_row = task_list[0]
         assert first_row[3] == "low"

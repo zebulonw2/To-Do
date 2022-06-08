@@ -8,7 +8,7 @@ import pysnooper
 from loguru import logger
 import peewee as pw
 import src.models as m
-from src.validator import val_sys_args
+from src.validator import val_sys_args, val_priority
 
 # logger.remove()
 # logger.add("log_{time}.log")
@@ -28,10 +28,10 @@ def add_contributor(name, role):
             f"Contributor Added: "
             f"{new_contributor.NAME, new_contributor.ROLE, new_contributor.DELETED}"
         )
-        return True
+        return new_contributor
     except pw.IntegrityError as error:
         logger.error(error)
-        return False
+        raise error
 
 
 def delete_contributor(name):
@@ -39,9 +39,9 @@ def delete_contributor(name):
     Deletes contributor and Associated Tasks
     """
     try:
-        c = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
-        c.DELETED = True
-        logger.info(f"Contributor Deleted: " f"{c.NAME, c.ROLE, c.DELETED}")
+        deleted = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
+        deleted.DELETED = True
+        logger.info(f"Contributor Deleted: " f"{deleted.NAME, deleted.ROLE, deleted.DELETED}")
         task_query = (
             m.TasksDb.select(m.TasksDb, m.ContributorsDB)
                 .join(m.ContributorsDB)
@@ -50,9 +50,9 @@ def delete_contributor(name):
         if len(task_query) > 0:
             for row in task_query:
                 row.DELETED = True
+                return row
             logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
-            return True
-        return True
+        return deleted
     except pw.IntegrityError:
         logger.error(f"'{name}' Not Found in DB")
         raise m.ContributorsDB.DoesNotExist
@@ -77,12 +77,11 @@ def add_task(task_owner, task_name, description, priority, start, due):
             DELETED=deleted,
             FINISHED=finished,
         )
-        t.save()
         logger.info(
             f"Task Added To DB: "
             f"{t.NUM, t.OWNER, t.NAME, t.DESCRIPTION, t.PRIORITY, t.START, t.DUE}"
         )
-        return True
+        return t
     except m.ContributorsDB.DoesNotExist as error:
         logger.error(f"'{task_owner}' Not A Contributor")
         return False
@@ -99,9 +98,9 @@ def update_task(task_num, task_name=None, task_description=None, priority=None):
         if task_description:
             row.DESCRIPTION = task_description
         if priority:
-            # validator.val_priority(priority) #todo validate this via sys.args
+            val_priority(priority)
             row.PRIORITY = priority
-        row.save()
+        # row.save()
         logger.info(
             f"Task '{task_num}' Changed. "
             f"Name: '{row.NAME}' Description: {row.DESCRIPTION} Priority: '{row.PRIORITY}'"
@@ -119,9 +118,9 @@ def mark_task_complete(task_num):
     try:
         row = m.TasksDb.get(m.TasksDb.NUM == task_num)
         row.FINISHED = True
-        row.save()
         logger.info(f"Task Marked Complete: " f"{row.NUM, row.NAME}")
-        return True
+        logger.debug(f"Complete: {row.FINISHED}")
+        return row
     except pw.IntegrityError:
         logger.error(f"'{task_num}' Not Found in DB")
         raise m.TasksDb.DoesNotExist
@@ -134,15 +133,14 @@ def delete_task(task_num):
     try:
         row = m.TasksDb.get(m.TasksDb.NUM == task_num)
         row.DELETED = True
-        row.save()
         logger.info(f"Task Deleted: " f"{row, row.NUM, row.NAME, row.DELETED}")
-        return True
+        return row
     except pw.IntegrityError:
         logger.error(f"'{task_num}' Not Found in DB")
         raise m.TasksDb.DoesNotExist
 
 
-def list_tasks(sort=None):  # todo figure out sort
+def list_tasks(sort="Num"):  # todo figure out sort
     """
     Lists Task on Entered Sort Field, Default Sorts by Task Number
     """
@@ -150,7 +148,6 @@ def list_tasks(sort=None):  # todo figure out sort
     t = Texttable()
     t.set_max_width(0)
     t.set_cols_dtype(["t"] * 9)
-    t.add_row([f"Sorted By {sort}", "", "", "", "", "", "", "", ""])
     t.add_row(
         [
             "Num",
