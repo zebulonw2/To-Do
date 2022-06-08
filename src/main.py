@@ -93,7 +93,7 @@ def add_task(task_owner, task_name, description, priority, start, due):
         logger.error(f"'{task_owner}' Not A Contributor")
         return False
     except Exception as error:
-        logger.error(error)
+        logger.error(f"{error.__class__, str(error)}")
         return False
 
 
@@ -221,7 +221,7 @@ def list_tasks(sort="Num"):
 
 
 def debug_priority():
-    query = m.TasksDb.get(m.TasksDb.NUM == '1')
+    query = m.TasksDb.get(m.TasksDb.NUM == "1")
     logger.debug(query.NAME)
     logger.debug(query.PRIORITY)
 

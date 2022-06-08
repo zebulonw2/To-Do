@@ -15,7 +15,3 @@ class PriorityError(Exception):
 
     def __init__(self, message: str):
         super().__init__(f"\n{message}")
-
-
-if __name__ == "__main__":
-    print("'errors.py' is being run directly")

@@ -20,6 +20,10 @@ test_db = pw.SqliteDatabase(":memory:")
 
 class TestValidator(unittest.TestCase):
     """Tests Validation Methods"""
+    def setUp(self) -> None:
+        for model in MODELS:
+            model.bind(test_db, bind_refs=False, bind_backrefs=False)
+        test_db.create_tables(MODELS)
 
     def test_sys_args_good(self):
         args = ["main", "add_contributor", "zeb", "tester"]
@@ -75,6 +79,10 @@ class TestValidator(unittest.TestCase):
         with pytest.raises(errors.PriorityError) as error:
             self.assertEqual(validator.val_priority("low p"), str(error.value))
             self.assertEqual(validator.val_priority(""), str(error.value))
+
+    def tearDown(self) -> None:
+        test_db.drop_tables(MODELS)
+        test_db.close()
 
 
 class TestAdd(unittest.TestCase):

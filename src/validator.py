@@ -9,11 +9,20 @@ from errors import DateFormatError, PriorityError
 def val_sys_args(args):
     if len(args) == 0:
         logger.error(f"Args Called: {args}")
-        raise SystemExit("Usage: main [add_contributor] [delete_contributor] [add_task] "
-                         "[update_task] [mark_task_complete]  [delete_task] [list_tasks]")
+        raise SystemExit(
+            "Usage: main [add_contributor] [delete_contributor] [add_task] "
+            "[update_task] [mark_task_complete]  [delete_task] [list_tasks]"
+        )
 
-    methods = ["add_contributor", "delete_contributor", "add_task", "update_task",
-               "mark_task_complete", "delete_task", "list_tasks"]
+    methods = [
+        "add_contributor",
+        "delete_contributor",
+        "add_task",
+        "update_task",
+        "mark_task_complete",
+        "delete_task",
+        "list_tasks",
+    ]
 
     if args[0] == methods[0]:
         if len(args) != 3:
@@ -30,7 +39,8 @@ def val_sys_args(args):
             logger.error(f"Args Called: {args}")
             raise SystemExit(
                 "Usage: main add_task task_owner task_name task_description "
-                "priority start_date due_date")
+                "priority start_date due_date"
+            )
         val_priority(args[4])
         val_start(args[5])
         val_due(args[6], args[5])
@@ -38,7 +48,9 @@ def val_sys_args(args):
     if args[0] == methods[3]:
         if len(args) != 4 or 5:
             logger.error(f"Args Called: {args}")
-            raise SystemExit("Usage: main update_task task_number [task_name] [task_description]")
+            raise SystemExit(
+                "Usage: main update_task task_number [task_name] [task_description]"
+            )
 
     if args[0] == methods[4]:
         if len(args) != 2:
@@ -51,7 +63,16 @@ def val_sys_args(args):
             raise SystemExit("Usage: main delete_task task_number")
 
     if args[0] == methods[6]:
-        sort_fields = ["Num", "Owner", "Name", "Priority", "Start", "Due", "Finished", "Deleted"]
+        sort_fields = [
+            "Num",
+            "Owner",
+            "Name",
+            "Priority",
+            "Start",
+            "Due",
+            "Finished",
+            "Deleted",
+        ]
         if len(args) > 2:
             logger.error(f"Args Called: {args}")
             raise SystemExit(f"Usage: main list_tasks sort_by={sort_fields}")
@@ -63,8 +84,10 @@ def val_sys_args(args):
 
     if args[0] not in methods:
         logger.error(args)
-        raise SystemExit("Usage: main [add_contributor] [delete_contributor] [add_task] "
-                         "[update_task] [delete_task] [list_tasks]")
+        raise SystemExit(
+            "Usage: main [add_contributor] [delete_contributor] [add_task] "
+            "[update_task] [delete_task] [list_tasks]"
+        )
     return True
 
 
