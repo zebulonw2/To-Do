@@ -1,11 +1,9 @@
 """
 Validates CLI Arguments
 """
-import sys
 import datetime
 from loguru import logger
-from src.errors import DateFormatError, PriorityError
-import src.models as m
+from errors import DateFormatError, PriorityError
 
 
 def val_sys_args(args):

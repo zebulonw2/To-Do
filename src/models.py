@@ -26,7 +26,7 @@ class TasksDb(BaseModel):
     OWNER = pw.ForeignKeyField(ContributorsDB, backref="task")
     NAME = pw.CharField()
     DESCRIPTION = pw.CharField()
-    PRIORITY = pw.CharField
+    PRIORITY = pw.CharField()
     START = pw.CharField()
     DUE = pw.CharField()
     FINISHED = pw.BooleanField(default=False)

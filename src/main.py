@@ -4,11 +4,10 @@ main driver for a simple social network project
 import os
 import sys
 from texttable import Texttable
-import pysnooper
 from loguru import logger
 import peewee as pw
-import src.models as m
-from src.validator import val_sys_args, val_priority
+import models as m
+from validator import val_sys_args, val_priority
 
 # logger.remove()
 # logger.add("log_{time}.log")
@@ -29,33 +28,40 @@ def add_contributor(name, role):
             f"{new_contributor.NAME, new_contributor.ROLE, new_contributor.DELETED}"
         )
         return new_contributor
-    except pw.IntegrityError as error:
-        logger.error(error)
-        raise error
+    except pw.IntegrityError:
+        logger.error(f"'{name}' Already in DB")
+        return False
 
 
 def delete_contributor(name):
     """
     Deletes contributor and Associated Tasks
     """
+    test_list = []
     try:
-        deleted = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
-        deleted.DELETED = True
-        logger.info(f"Contributor Deleted: " f"{deleted.NAME, deleted.ROLE, deleted.DELETED}")
+        contributor = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
+        contributor.DELETED = True
+        logger.info(
+            f"Deleted: {contributor.NAME, contributor.ROLE, contributor.DELETED}"
+        )
+        test_list.append(contributor.DELETED)
         task_query = (
             m.TasksDb.select(m.TasksDb, m.ContributorsDB)
-                .join(m.ContributorsDB)
-                .where(m.ContributorsDB.NAME == name)
+            .join(m.ContributorsDB)
+            .where(m.ContributorsDB.NAME == name)
         )
         if len(task_query) > 0:
             for row in task_query:
                 row.DELETED = True
-                return row
+                test_list.append(row.DELETED)
             logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
-        return deleted
-    except pw.IntegrityError:
+        return test_list
+    except pw.DoesNotExist:
         logger.error(f"'{name}' Not Found in DB")
-        raise m.ContributorsDB.DoesNotExist
+        return False
+    except Exception as error:
+        logger.error(error)
+        return False
 
 
 def add_task(task_owner, task_name, description, priority, start, due):
@@ -81,9 +87,13 @@ def add_task(task_owner, task_name, description, priority, start, due):
             f"Task Added To DB: "
             f"{t.NUM, t.OWNER, t.NAME, t.DESCRIPTION, t.PRIORITY, t.START, t.DUE}"
         )
+        t.save()
         return t
-    except m.ContributorsDB.DoesNotExist as error:
+    except pw.DoesNotExist:
         logger.error(f"'{task_owner}' Not A Contributor")
+        return False
+    except Exception as error:
+        logger.error(error)
         return False
 
 
@@ -100,14 +110,17 @@ def update_task(task_num, task_name=None, task_description=None, priority=None):
         if priority:
             val_priority(priority)
             row.PRIORITY = priority
-        # row.save()
+        row.save()
         logger.info(
             f"Task '{task_num}' Changed. "
             f"Name: '{row.NAME}' Description: {row.DESCRIPTION} Priority: '{row.PRIORITY}'"
         )
-        return True
-    except m.TasksDb.DoesNotExist:
+        return row
+    except pw.DoesNotExist:
         logger.error(f"'{task_num}' Not Found in DB")
+        return False
+    except pw.IntegrityError as error:
+        logger.error(error)
         return False
 
 
@@ -118,12 +131,15 @@ def mark_task_complete(task_num):
     try:
         row = m.TasksDb.get(m.TasksDb.NUM == task_num)
         row.FINISHED = True
-        logger.info(f"Task Marked Complete: " f"{row.NUM, row.NAME}")
-        logger.debug(f"Complete: {row.FINISHED}")
+        logger.info(f"Task Marked Complete: " f"{row.NUM, row.NAME, row.FINISHED}")
+        row.save()
         return row
-    except pw.IntegrityError:
+    except pw.DoesNotExist:
         logger.error(f"'{task_num}' Not Found in DB")
-        raise m.TasksDb.DoesNotExist
+        return False
+    except Exception as error:
+        logger.error(error)
+        return False
 
 
 def delete_task(task_num):
@@ -133,18 +149,22 @@ def delete_task(task_num):
     try:
         row = m.TasksDb.get(m.TasksDb.NUM == task_num)
         row.DELETED = True
+        row.save()
         logger.info(f"Task Deleted: " f"{row, row.NUM, row.NAME, row.DELETED}")
         return row
-    except pw.IntegrityError:
+    except pw.DoesNotExist:
         logger.error(f"'{task_num}' Not Found in DB")
-        raise m.TasksDb.DoesNotExist
+        return False
+    except Exception as error:
+        logger.error(error)
+        return False
 
 
-def list_tasks(sort="Num"):  # todo figure out sort
+def list_tasks(sort="Num"):
     """
     Lists Task on Entered Sort Field, Default Sorts by Task Number
     """
-    testing_list = []
+    print(f"Sorted On {sort}")
     t = Texttable()
     t.set_max_width(0)
     t.set_cols_dtype(["t"] * 9)
@@ -161,25 +181,26 @@ def list_tasks(sort="Num"):  # todo figure out sort
             "Deleted",
         ]
     )
-    if sort == 'Num':
+    if sort == "Num":
         query = m.TasksDb.NUM
-    if sort == 'Owner':
+    elif sort == "Owner":
         query = m.TasksDb.OWNER
-    if sort == 'Name':
+    elif sort == "Name":
         query = m.TasksDb.NAME
-    if sort == 'Priority':
+    elif sort == "Priority":
         query = m.TasksDb.PRIORITY
-    if sort == 'Start':
+    elif sort == "Start":
         query = m.TasksDb.START
-    if sort == 'Due':
+    elif sort == "Due":
         query = m.TasksDb.DUE
-    if sort == 'Finished':
+    elif sort == "Finished":
         query = m.TasksDb.FINISHED
-    if sort == 'Deleted':
+    elif sort == "Deleted":
         query = m.TasksDb.DELETED
     else:
         query = ""
     task_query = m.TasksDb.select().order_by(query)
+    test_list = []
     for i in task_query:
         row = [
             i.NUM,
@@ -194,10 +215,15 @@ def list_tasks(sort="Num"):  # todo figure out sort
         ]
         t.add_row(row)
         logger.info(row)
-        testing_list.append(row)
+        test_list.append(row)
     print(t.draw())
-    logger.info(testing_list)
-    return testing_list
+    return test_list
+
+
+def debug_priority():
+    query = m.TasksDb.get(m.TasksDb.NUM == '1')
+    logger.debug(query.NAME)
+    logger.debug(query.PRIORITY)
 
 
 def main() -> None:
