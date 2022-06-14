@@ -1,17 +1,12 @@
 """
 Unit Test for main.py
 """
-import sys
+# pylint: disable=R0201
 import unittest
-from unittest.mock import patch
-
 import loguru
 import peewee as pw
 import pytest
-
 import main
-import errors
-import validator
 from models import ContributorsDB, TasksDb
 
 MODELS = (ContributorsDB, TasksDb)
@@ -26,164 +21,41 @@ class TestValidator(unittest.TestCase):
             model.bind(test_db, bind_refs=False, bind_backrefs=False)
         test_db.create_tables(MODELS)
 
-    def test_sys_args_no_method(self):
-        args = ["main"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_bad_method(self):
-        args = ["main", "test"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_add_contributor_good(self):
-        args = ["main", "add_contributor", "zeb", "tester"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_add_contributor_bad(self):
-        args = ["main", "add_contributor"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_delete_contributor_good(self):
-        args = ["main", "delete_contributor", "zeb"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_delete_contributor_bad(self):
-        args = ["main", "delete_contributor"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_add_task_good(self):
-        args = [
-            "main",
-            "add_task",
-            "zeb",
-            "write test",
-            "testing",
-            "high",
-            "2021-01-01",
-            "2022-01-01",
-        ]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_add_task_bad(self):
-        args = ["main", "add_task", "zeb"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_update_task_good(self):
-        args = ["main", "update_task", "1", "new 1", "new", "low"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-        args = ["main", "update_task", "1", "new 2", "new 1"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-        args = ["main", "update_task", "1", "new 3", "new 2", "low"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_update_task_bad(self):
-        args = ["main", "update_task", "zeb"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_mark_complete_good(self):
-        args = ["main", "mark_task_complete", "1"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_mark_complete_bad(self):
-        args = ["main", "mark_task_complete"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_delete_task_good(self):
-        args = ["main", "delete_task", "1"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_delete_task_bad(self):
-        args = ["main", "delete_task"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_table_attributes_good(self):
-        args = ["main", "table_attributes"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_table_attributes_bad(self):
-        args = ["main", "table_attributes", "test"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_list_default_good(self):
-        args = ["main", "list_tasks"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_list_arg_good(self):
-        args = ["main", "list_tasks", "Name"]
-        with patch.object(sys, "argv", args):
-            self.assertEqual(validator.val_sys_args(args[1:]), True)
-
-    def test_sys_args_list_arg_bad(self):
-        args = ["main", "list_tasks", "test"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
-    def test_sys_args_list_arg_too_many(self):
-        args = ["main", "list_tasks", "Name", "Due"]
-        with patch.object(sys, "argv", args):
-            with pytest.raises(SystemExit) as error:
-                self.assertEqual(validator.val_sys_args(args[1:]), str(error.value))
-
     def test_start_good(self):
-        self.assertEqual(validator.val_start("2022-06-06"), True)
+        """test good start format"""
+        self.assertEqual(main.val_start("2022-06-06"), True)
 
     def test_start_bad(self):
-        with pytest.raises(errors.DateFormatError) as error:
-            self.assertEqual(validator.val_start("022-06-06"), str(error.value))
+        """test bad start format"""
+        with pytest.raises(main.DateFormatError) as error:
+            self.assertEqual(main.val_start("022-06-06"), str(error.value))
 
     def test_due_good(self):
-        self.assertEqual(validator.val_due("2022-06-06", "2022-06-05"), True)
+        """tests good due format"""
+        self.assertEqual(main.val_due("2022-06-06", "2022-06-05"), True)
 
     def test_due_bad(self):
-        with pytest.raises(errors.DateFormatError) as error:
-            self.assertEqual(
-                validator.val_due("022-06-06", "2022-01-01"), str(error.value)
-            )
+        """tests bad due format"""
+        with pytest.raises(main.DateFormatError) as error:
+            self.assertEqual(main.val_due("022-06-06", "2022-01-01"), str(error.value))
 
     def test_due_before_start(self):
-        with pytest.raises(errors.DateFormatError) as error:
-            self.assertEqual(
-                validator.val_due("2022-06-05", "2022-06-06"), str(error.value)
-            )
+        """test due date before start date"""
+        with pytest.raises(main.DateFormatError) as error:
+            self.assertEqual(main.val_due("2022-06-05", "2022-06-06"), str(error.value))
 
     def test_priority_good(self):
-        self.assertEqual(validator.val_priority("high"), True)
-        self.assertEqual(validator.val_priority("HIGH"), True)
-        self.assertEqual(validator.val_priority("High"), True)
-        self.assertEqual(validator.val_priority("low"), True)
-        self.assertEqual(validator.val_priority("medium"), True)
+        """tests good priority formats"""
+        self.assertEqual(main.val_priority("high"), True)
+        self.assertEqual(main.val_priority("HIGH"), True)
+        self.assertEqual(main.val_priority("High"), True)
+        self.assertEqual(main.val_priority("low"), True)
+        self.assertEqual(main.val_priority("medium"), True)
 
     def test_priority_bad(self):
-        with pytest.raises(errors.PriorityError) as error:
-            self.assertEqual(validator.val_priority("low p"), str(error.value))
+        """tests bad priority formats"""
+        with pytest.raises(main.PriorityError) as error:
+            self.assertEqual(main.val_priority("low p"), str(error.value))
 
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
@@ -199,6 +71,7 @@ class TestAdd(unittest.TestCase):
         test_db.create_tables(MODELS)
 
     def test_add_contributor(self):
+        """add contributor"""
         row = main.add_contributor("zeb", "tester")
         assert row.NAME == "zeb"
         self.assertEqual(main.add_contributor("zeb", "tester"), False)
@@ -221,6 +94,7 @@ class TestAdd(unittest.TestCase):
         assert row.DELETED is False
 
     def test_add_task_no_contributor(self):
+        """add task when no contributor exists"""
         self.assertEqual(
             main.add_task(
                 "",
@@ -247,6 +121,7 @@ class TestUpdate(unittest.TestCase):
         test_db.create_tables(MODELS)
 
     def test_update(self):
+        """tests update"""
         main.add_contributor("zeb", "tester")
         main.add_task(
             "zeb", "write tests", "test description", "high", "2020-01-01", "2022-01-01"
@@ -262,6 +137,7 @@ class TestUpdate(unittest.TestCase):
         assert row.PRIORITY == "low"
 
     def test_update_priority_bad(self):
+        """tests update with bad priority format"""
         main.add_contributor("zeb", "tester")
         main.add_task(
             "zeb", "test name", "test description", "high", "2020-01-01", "2022-01-01"
@@ -269,6 +145,7 @@ class TestUpdate(unittest.TestCase):
         self.assertEqual(main.update_task("1", priority=" "), False)
 
     def test_update_not_exist(self):
+        """update task that doesn't exist"""
         self.assertEqual(main.update_task("2", task_name=" "), False)
 
     def tearDown(self) -> None:
@@ -282,9 +159,10 @@ class TestMarkComplete(unittest.TestCase):
     def setUp(self) -> None:
         for model in MODELS:
             model.bind(test_db, bind_refs=False, bind_backrefs=False)
-        test_db.create_tables(MODELS)
+            test_db.create_tables(MODELS)
 
     def test_mark_complete(self):
+        """tests mark complete"""
         main.add_contributor("zeb", "tester")
         main.add_task(
             "zeb", "write tests", "test description", "high", "2020-01-01", "2022-01-01"
@@ -293,6 +171,7 @@ class TestMarkComplete(unittest.TestCase):
         assert row.FINISHED is True
 
     def test_mark_complete_not_exist(self):
+        """marks task complete that doesn't exsist"""
         self.assertEqual(main.mark_task_complete(""), False)
 
     def tearDown(self) -> None:
@@ -306,15 +185,17 @@ class TestDelete(unittest.TestCase):
     def setUp(self) -> None:
         for model in MODELS:
             model.bind(test_db, bind_refs=False, bind_backrefs=False)
-        test_db.create_tables(MODELS)
+            test_db.create_tables(MODELS)
 
     def test_delete_contributor_no_task(self):
+        """tests delete with no task"""
         main.add_contributor("zeb", "tester")
         row = main.delete_contributor("zeb")
         for item in row:
             assert item is True
 
     def test_delete_contributor_with_task(self):
+        """tests delete with task"""
         main.add_contributor("zeb", "tester")
         main.add_task(
             "zeb", "write tests", "test description", "high", "2020-01-01", "2022-01-01"
@@ -332,6 +213,7 @@ class TestDelete(unittest.TestCase):
             assert item is True
 
     def test_delete_task(self):
+        """tests delete task"""
         main.add_contributor("zeb", "tester")
         main.add_task(
             "zeb", "write tests", "test description", "high", "2020-01-01", "2022-01-01"
@@ -340,9 +222,11 @@ class TestDelete(unittest.TestCase):
         assert row.DELETED is True
 
     def test_delete_contributor_not_exist(self):
+        """tests delete a contributor that doesn't exist"""
         self.assertEqual(main.delete_contributor(""), False)
 
     def test_delete_task_not_exist(self):
+        """tests delete a task that doesn't exist"""
         self.assertEqual(main.delete_task(""), False)
 
     def tearDown(self) -> None:
@@ -371,41 +255,49 @@ class TestList(unittest.TestCase):
         )
 
     def test_list_default(self):
+        """tests sort on default"""
         task_list = main.list_tasks(" ")
         first_row = task_list[0]
         assert first_row[0] == "1"
 
     def test_list_num(self):
+        """tests sort on num"""
         task_list = main.list_tasks(sort="Num")
         first_row = task_list[0]
         assert first_row[0] == "1"
 
     def test_list_owner(self):
+        """tests sort on owner"""
         task_list = main.list_tasks(sort="Owner")
         first_row = task_list[0]
         assert first_row[1] == "john"
 
     def test_list_name(self):
+        """tests sort on name"""
         task_list = main.list_tasks(sort="Name")
         first_row = task_list[0]
         assert first_row[2] == "a test"
 
     def test_list_priority(self):
+        """tests sort on priority"""
         task_list = main.list_tasks(sort="Priority")
         first_row = task_list[0]
         assert first_row[4] == "high"
 
     def test_list_start(self):
+        """tests sort on start"""
         task_list = main.list_tasks(sort="Start")
         first_row = task_list[0]
         assert first_row[5] == "2020-01-01"
 
     def test_list_due(self):
+        """tests sort on due"""
         task_list = main.list_tasks(sort="Due")
         first_row = task_list[0]
         assert first_row[6] == "2022-01-02"
 
     def test_list_finished(self):
+        """tests sort on finished"""
         main.mark_task_complete("2")
         task_list = main.list_tasks(sort="Finished")
         first_row = task_list[0]
@@ -414,6 +306,7 @@ class TestList(unittest.TestCase):
         assert last_row[7] is True
 
     def test_list_deleted(self):
+        """tests sort on deleted"""
         main.delete_task("2")
         task_list = main.list_tasks(sort="Deleted")
         first_row = task_list[0]
@@ -435,6 +328,7 @@ class TestTableAttributes(unittest.TestCase):
         test_db.create_tables(MODELS)
 
     def test_table_attributes(self):
+        """Tests table attributes"""
         row = main.table_attributes()
         assert row[0] == 0
         assert row[1] == 0
@@ -442,16 +336,6 @@ class TestTableAttributes(unittest.TestCase):
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
         test_db.close()
-
-
-class TestMain(unittest.TestCase):
-    """Tests Main Method"""
-
-    def test_main(self):
-        # todo how to test command line calls
-        # todo how to test db creation
-        pass
-
 
 
 if __name__ == "__main__":
