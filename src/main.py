@@ -31,6 +31,9 @@ def add_contributor(name, role):
     except pw.IntegrityError:
         logger.error(f"'{name}' Already in DB")
         return False
+    except Exception as error:
+        logger.error(error)
+        return False
 
 
 def delete_contributor(name):
@@ -119,7 +122,7 @@ def update_task(task_num, task_name=None, task_description=None, priority=None):
     except pw.DoesNotExist:
         logger.error(f"'{task_num}' Not Found in DB")
         return False
-    except pw.IntegrityError as error:
+    except Exception as error:
         logger.error(error)
         return False
 
@@ -220,14 +223,13 @@ def list_tasks(sort="Num"):
     return test_list
 
 
-def debug_priority():
-    query = m.TasksDb.get(m.TasksDb.NUM == "1")
-    logger.debug(query.NAME)
-    logger.debug(query.PRIORITY)
+def table_attributes():
+    logger.info(f"Contributors DB {len(m.ContributorsDB)}")
+    logger.info(f"Tasks DB {len(m.TasksDb)}")
+    return len(m.ContributorsDB), len(m.TasksDb)
 
 
-def main() -> None:
-    """Entrypoint of program run as module"""
+if __name__ == "__main__":
     m.create_db()
     args = sys.argv[1:]
     val_sys_args(args)
@@ -252,9 +254,7 @@ def main() -> None:
         delete_task(task_num=args[1])
     if args[0] == "list_tasks":
         list_tasks(sort=args[1])
+    if args[0] == 'table_attributes':
+        table_attributes()
     m.db.close()
     sys.exit()
-
-
-if __name__ == "__main__":
-    main()

@@ -7,13 +7,6 @@ from errors import DateFormatError, PriorityError
 
 
 def val_sys_args(args):
-    if len(args) == 0:
-        logger.error(f"Args Called: {args}")
-        raise SystemExit(
-            "Usage: main [add_contributor] [delete_contributor] [add_task] "
-            "[update_task] [mark_task_complete]  [delete_task] [list_tasks]"
-        )
-
     methods = [
         "add_contributor",
         "delete_contributor",
@@ -22,7 +15,12 @@ def val_sys_args(args):
         "mark_task_complete",
         "delete_task",
         "list_tasks",
+        "table_attributes",
     ]
+
+    if len(args) == 0:
+        logger.error(f"Args Called: {args}")
+        raise SystemExit(f"Usage: main {methods}")
 
     if args[0] == methods[0]:
         if len(args) != 3:
@@ -46,10 +44,10 @@ def val_sys_args(args):
         val_due(args[6], args[5])
 
     if args[0] == methods[3]:
-        if len(args) != 4 or 5:
+        if len(args) not in (4, 5, 6):
             logger.error(f"Args Called: {args}")
             raise SystemExit(
-                "Usage: main update_task task_number [task_name] [task_description]"
+                "Usage: main update_task task_number [task_name] [task_description] [priority]"
             )
 
     if args[0] == methods[4]:
@@ -63,6 +61,7 @@ def val_sys_args(args):
             raise SystemExit("Usage: main delete_task task_number")
 
     if args[0] == methods[6]:
+        logger.debug(len(args))
         sort_fields = [
             "Num",
             "Owner",
@@ -73,14 +72,19 @@ def val_sys_args(args):
             "Finished",
             "Deleted",
         ]
-        if len(args) > 2:
+        if len(args) not in (1, 2):
             logger.error(f"Args Called: {args}")
             raise SystemExit(f"Usage: main list_tasks sort_by={sort_fields}")
         if len(args) == 2:
-            sort_field = args[2]
-            if len(args) != 2 or sort_field not in sort_fields:
+            sort_arg = args[1]
+            if sort_arg not in sort_fields:
                 logger.error(f"Args Called: {args}")
                 raise SystemExit(f"Usage: main list_tasks sort_by={sort_fields}")
+
+    if args[0] == methods[7]:
+        if len(args) != 1:
+            logger.error(f"Args Called: {args}")
+            raise SystemExit(f"Usage: main table_attributes")
 
     if args[0] not in methods:
         logger.error(args)
@@ -115,7 +119,3 @@ def val_priority(priority):
     if str(priority).upper() not in priority_options:
         raise PriorityError("Priority Must Be High, Medium, or Low")
     return True
-
-
-if __name__ == "__main__":
-    print("validator.py is being run directly")
