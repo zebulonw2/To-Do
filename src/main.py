@@ -26,7 +26,7 @@ def add_contributor(name: str, role: str):
         new_contributor = m.ContributorsDB.create(NAME=name, ROLE=role, DELETED=False)
         new_contributor.save()
         logger.info(
-            f"Contributor Added: " f"{new_contributor.NAME, new_contributor.ROLE}"
+            f"Contributor Added: " f"{new_contributor.NAME, new_contributor.ROLE} "
         )
         return new_contributor
     except pw.IntegrityError:
@@ -48,7 +48,7 @@ def delete_contributor(name: str):
         contributor = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
         contributor.DELETED = True
         logger.info(
-            f"Deleted: {contributor.NAME, contributor.ROLE, contributor.DELETED}"
+            f"Deleted: " f"{contributor.NAME, contributor.ROLE, contributor.DELETED}"
         )
         test_list.append(contributor.DELETED)
         task_query = (
@@ -103,7 +103,8 @@ def add_task(
         )
         logger.info(
             f"Task Added To DB: "
-            f"{tsk.NUM, tsk.OWNER, tsk.NAME, tsk.DESCRIPTION, tsk.PRIORITY, tsk.START, tsk.DUE}"
+            f"{tsk.NUM, str(tsk.OWNER), tsk.NAME, tsk.DESCRIPTION}"
+            f"{tsk.PRIORITY, tsk.START, tsk.DUE}"
         )
         tsk.save()
         return tsk
@@ -116,7 +117,8 @@ def add_task(
 
 
 @app.command(
-    short_help="Updates Task Information. Requires Task Num and At Least One Optional Arg"
+    short_help="Updates Task Information. "
+    "Requires Task Num and At Least One Optional Arg"
 )
 def update_task(
     task_num: str,
@@ -125,7 +127,8 @@ def update_task(
     priority: str = None,
 ):
     """
-    Updates Task Information. Requires Task Num and At Least One Optional Argument
+    Updates Task Information. Requires Task
+    Num and At Least One Optional Argument
     """
     typer.echo(f"Updating Task '{task_num}'...")
     try:
@@ -140,7 +143,8 @@ def update_task(
         row.save()
         logger.info(
             f"Task '{task_num}' Changed. "
-            f"Name: '{row.NAME}' Description: {row.DESCRIPTION} Priority: '{row.PRIORITY}'"
+            f"Name: '{row.NAME}' Description: {row.DESCRIPTION} "
+            f"Priority: '{row.PRIORITY}'"
         )
         return row
     except pw.DoesNotExist:
@@ -193,43 +197,45 @@ def delete_task(task_num):
 
 @app.command(
     short_help="Lists Task Sorted On Keyword. Options:"
-    "Num (Default), Owner, Name, Description, Priority, Start, Due, Finished, Deleted"
+    "Num (Default), Owner, Name, Description, "
+    "Priority, Start, Due, Finished, Deleted"
 )
 def list_tasks(sort="Num"):
     """
     Lists Task Sorted On Keyword. Options:
-    Num (Default), Owner, Name, Description, Priority, Start, Due, Finished, Deleted
+    Num (Default), Owner, Name, Description,
+    Priority, Start, Due, Finished, Deleted
     """
     sorts = [
-        "Num",
-        "Owner",
-        "Name",
-        "Description",
-        "Priority",
-        "Start",
-        "Due",
-        "Finished",
-        "Deleted",
+        "NUM",
+        "OWNER",
+        "NAME",
+        "DESCRIPTION",
+        "PRIORITY",
+        "START",
+        "DUE",
+        "FINISHED",
+        "DELETED",
     ]
-    if sort not in sorts:
+    if str(sort).upper() not in sorts:
         typer.echo(f"Sorting On Num...")
     else:
         typer.echo(f"Sorting On {sort}...")
-    if sort == "Num":
+    if str(sort).upper() == "NUM":
         query = m.TasksDb.select().order_by(m.TasksDb.NUM)
-    elif sort == "Owner":
+    elif str(sort).upper() == "OWNER":
         query = m.TasksDb.select().order_by(m.TasksDb.OWNER)
-    elif sort == "Name":
+    elif str(sort).upper() == "NAME":
         query = m.TasksDb.select().order_by(m.TasksDb.NAME)
-    elif sort == "Priority":
+    elif str(sort).upper() == "PRIORITY":
         query = m.TasksDb.select().order_by(m.TasksDb.PRIORITY)
-    elif sort == "Start":
+    elif str(sort).upper() == "START":
         query = m.TasksDb.select().order_by(m.TasksDb.START)
-    elif sort == "Due":
+    elif str(sort).upper() == "DUE":
         query = m.TasksDb.select().order_by(m.TasksDb.DUE)
-    elif sort == "Finished":
+    elif str(sort).upper() == "FINISHED":
         query = m.TasksDb.select().where(m.TasksDb.FINISHED == "True")
-    elif sort == "Deleted":
+    elif str(sort).upper() == "DELETED":
         query = m.TasksDb.select().where(m.TasksDb.DELETED == "True")
     else:
         query = m.TasksDb.select().order_by(m.TasksDb.NUM)
@@ -251,7 +257,7 @@ def list_tasks(sort="Num"):
             i.DELETED,
         ]
         table.add_row(row)
-        logger.info(row)
+        # logger.info(row)
         test_list.append(row)
     print(table.draw())
     return test_list
@@ -288,6 +294,7 @@ def val_start(start):
         datetime.datetime.strptime(start, "%Y-%m-%d")
         return True
     except ValueError:
+        logger.error(f"Date '{start}'. Date Must Be YYYY-MM-DD")
         raise DateFormatError("Dates Must Be YYYY-MM-DD") from Exception
 
 
@@ -296,10 +303,11 @@ def val_due(due, start):
     try:
         datetime.datetime.strptime(due, "%Y-%m-%d")
         if not due > start:
-            raise DateFormatError(f"Due Date Must Be After {start}")
+            logger.error(f"Due Date Must Be After Start Date ({start})")
+            raise DateFormatError(f"Due Date Must Be After Start Date ({start})")
         return True
     except ValueError:
-        print("Dates Must Be YYYY-MM-DD")
+        logger.error("Dates Must Be YYYY-MM-DD")
         raise DateFormatError("Dates Must Be YYYY-MM-DD") from Exception
 
 
@@ -307,6 +315,7 @@ def val_priority(priority):
     """Validates Priority Format"""
     priority_options = ["HIGH", "MEDIUM", "LOW"]
     if str(priority).upper() not in priority_options:
+        logger.error("Priority Must Be High, Medium, or Low")
         raise PriorityError("Priority Must Be High, Medium, or Low")
     return True
 

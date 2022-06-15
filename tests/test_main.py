@@ -334,12 +334,5 @@ class TestTableAttributes(unittest.TestCase):
         test_db.close()
 
 
-class TestDB(unittest.TestCase):
-    """Tests DB Creation"""
-
-    def test_db_creation(self):
-        self.assertEqual(models.create_db(), (ContributorsDB, TasksDb))
-
-
 if __name__ == "__main__":
     unittest.main()
