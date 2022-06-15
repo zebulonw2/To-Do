@@ -1,8 +1,6 @@
 """
 main driver for a simple social network project
 """
-# pylint: disable=W0703
-# pylint: disable=R0913
 import datetime
 import sys
 from texttable import Texttable
@@ -194,51 +192,53 @@ def delete_task(task_num):
 
 
 @app.command(
-    short_help="Lists Task on Entered Sort Field, Default Sorts by Task Number"
+    short_help="Lists Task Sorted On Keyword. Options:"
+    "Num (Default), Owner, Name, Description, Priority, Start, Due, Finished, Deleted"
 )
 def list_tasks(sort="Num"):
     """
-    Lists Task on Entered Sort Field, Default Sorts by Task Number
+    Lists Task Sorted On Keyword. Options:
+    Num (Default), Owner, Name, Description, Priority, Start, Due, Finished, Deleted
     """
-    typer.echo(f"Sorting On {sort}...")
-    print(f"Sorted On {sort}")
+    sorts = [
+        "Num",
+        "Owner",
+        "Name",
+        "Description",
+        "Priority",
+        "Start",
+        "Due",
+        "Finished",
+        "Deleted",
+    ]
+    if sort not in sorts:
+        typer.echo(f"Sorting On Num...")
+    else:
+        typer.echo(f"Sorting On {sort}...")
+    if sort == "Num":
+        query = m.TasksDb.select().order_by(m.TasksDb.NUM)
+    elif sort == "Owner":
+        query = m.TasksDb.select().order_by(m.TasksDb.OWNER)
+    elif sort == "Name":
+        query = m.TasksDb.select().order_by(m.TasksDb.NAME)
+    elif sort == "Priority":
+        query = m.TasksDb.select().order_by(m.TasksDb.PRIORITY)
+    elif sort == "Start":
+        query = m.TasksDb.select().order_by(m.TasksDb.START)
+    elif sort == "Due":
+        query = m.TasksDb.select().order_by(m.TasksDb.DUE)
+    elif sort == "Finished":
+        query = m.TasksDb.select().where(m.TasksDb.FINISHED == "True")
+    elif sort == "Deleted":
+        query = m.TasksDb.select().where(m.TasksDb.DELETED == "True")
+    else:
+        query = m.TasksDb.select().order_by(m.TasksDb.NUM)
+    test_list = []
     table = Texttable()
     table.set_max_width(0)
     table.set_cols_dtype(["t"] * 9)
-    table.add_row(
-        [
-            "Num",
-            "Owner",
-            "Name",
-            "Description",
-            "Priority",
-            "Start",
-            "Due",
-            "Finished",
-            "Deleted",
-        ]
-    )
-    if sort == "Num":
-        query = m.TasksDb.NUM
-    elif sort == "Owner":
-        query = m.TasksDb.OWNER
-    elif sort == "Name":
-        query = m.TasksDb.NAME
-    elif sort == "Priority":
-        query = m.TasksDb.PRIORITY
-    elif sort == "Start":
-        query = m.TasksDb.START
-    elif sort == "Due":
-        query = m.TasksDb.DUE
-    elif sort == "Finished":
-        query = m.TasksDb.FINISHED
-    elif sort == "Deleted":
-        query = m.TasksDb.DELETED
-    else:
-        query = ""
-    test_list = []
-    # pylint: disable=E1133
-    for i in m.TasksDb.select().order_by(query):
+    table.add_row(sorts)
+    for i in query:
         row = [
             i.NUM,
             str(i.OWNER),

@@ -1,12 +1,12 @@
 """
 Unit Test for main.py
 """
-# pylint: disable=R0201
 import unittest
 import loguru
 import peewee as pw
 import pytest
 import main
+import models
 from models import ContributorsDB, TasksDb
 
 MODELS = (ContributorsDB, TasksDb)
@@ -171,7 +171,7 @@ class TestMarkComplete(unittest.TestCase):
         assert row.FINISHED is True
 
     def test_mark_complete_not_exist(self):
-        """marks task complete that doesn't exsist"""
+        """marks task complete that doesn't exists"""
         self.assertEqual(main.mark_task_complete(""), False)
 
     def tearDown(self) -> None:
@@ -300,19 +300,15 @@ class TestList(unittest.TestCase):
         """tests sort on finished"""
         main.mark_task_complete("2")
         task_list = main.list_tasks(sort="Finished")
-        first_row = task_list[0]
-        assert first_row[7] is False
-        last_row = task_list[-1]
-        assert last_row[7] is True
+        for row in task_list:
+            assert row[7] is True
 
     def test_list_deleted(self):
         """tests sort on deleted"""
         main.delete_task("2")
         task_list = main.list_tasks(sort="Deleted")
-        first_row = task_list[0]
-        assert first_row[8] is False
-        last_row = task_list[2]
-        assert last_row[8] is True
+        for row in task_list:
+            assert row[8] is True
 
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
@@ -336,6 +332,13 @@ class TestTableAttributes(unittest.TestCase):
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)
         test_db.close()
+
+
+class TestDB(unittest.TestCase):
+    """Tests DB Creation"""
+
+    def test_db_creation(self):
+        self.assertEqual(models.create_db(), (ContributorsDB, TasksDb))
 
 
 if __name__ == "__main__":

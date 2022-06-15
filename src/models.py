@@ -38,3 +38,4 @@ def create_db():
     db.connect()
     db.execute_sql('PRAGMA foreign_keys = ON;')
     db.create_tables([ContributorsDB, TasksDb])
+    return ContributorsDB, TasksDb
