@@ -233,7 +233,7 @@ def list_tasks(sort="NUM"):
         "DELETED",
     ]
     typer.echo(f"Sorting On Num...") if str(sort).upper() not in sorts else \
-        typer.echo(f"Sorting On {sort}...")
+        typer.echo(f"Sorting On {str(sort).title()}...")
     if str(sort).upper() == "NUM":
         query = m.TasksDb.select().order_by(m.TasksDb.NUM)
     elif str(sort).upper() == "OWNER":

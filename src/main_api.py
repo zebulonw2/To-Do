@@ -1,10 +1,11 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_restful import Resource, Api
 import models as m
 from main import list_tasks
 from flask import jsonify
 
 db = m.db
+app = Flask(__name__)
 
 
 class Contributors(Resource):
@@ -73,25 +74,27 @@ class Profile(Resource):
 class List(Resource):
     def get(self, sort):
         table = list_tasks(sort=sort)
-        results = {f"Tasks Sorted On {sort}": [table]}
+        results = {f"Tasks Sorted On {str(sort).title()}": [table]}
         return jsonify(results)
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 
 def main():
     m.create_db()
-    app = Flask(__name__)
 
     api = Api(app)
-    api.add_resource(Contributors, "/contributors", "/contributors/")
-    api.add_resource(Tasks, "/tasks", "/tasks/")
+    api.add_resource(Contributors, "/contributors/")
+    api.add_resource(Tasks, "/tasks/")
     api.add_resource(
         Profile,
-        "/contributors/<name>",
         "/contributors/<name>/",
-        "/tasks/<name>",
         "/tasks/<name>/",
     )
-    api.add_resource(List, "/tasks/sort/<sort>", "/tasks/sort/<sort>/")
+    api.add_resource(List, "/tasks/sort/<sort>/")
 
     app.run(port=5000, debug=True)
 
