@@ -6,7 +6,6 @@ import loguru
 import peewee as pw
 import pytest
 import main
-import models
 from models import ContributorsDB, TasksDb
 
 MODELS = (ContributorsDB, TasksDb)
@@ -190,9 +189,9 @@ class TestDelete(unittest.TestCase):
     def test_delete_contributor_no_task(self):
         """tests delete with no task"""
         main.add_contributor("zeb", "tester")
-        row = main.delete_contributor("zeb")
-        for item in row:
-            assert item is True
+        contributor, tasks = main.delete_contributor("zeb")
+        assert contributor.DELETED is True
+        assert len(tasks) == 0
 
     def test_delete_contributor_with_task(self):
         """tests delete with task"""
@@ -208,8 +207,10 @@ class TestDelete(unittest.TestCase):
             "2022-05-05",
             "2050-01-01",
         )
-        row = main.delete_contributor("zeb")
-        for item in row:
+        contributor, tasks = main.delete_contributor("zeb")
+        assert contributor.DELETED is True
+        assert len(tasks) == 2
+        for item in tasks:
             assert item is True
 
     def test_delete_task(self):
@@ -309,6 +310,13 @@ class TestList(unittest.TestCase):
         task_list = main.list_tasks(sort="Deleted")
         for row in task_list:
             assert row[8] is True
+
+    def test_view_contributors(self):
+        """Tests view contributors"""
+        row = main.view_contributors()
+        assert len(row) == 2
+        assert row[0] == ("john", "writer", False)
+        assert row[1] == ("zeb", "tester", False)
 
     def tearDown(self) -> None:
         test_db.drop_tables(MODELS)

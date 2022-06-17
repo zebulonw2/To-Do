@@ -6,3 +6,5 @@ pytest~=7.1.2
 PySnooper~=1.1.1
 texttable~=1.6.4
 typer~=0.4.1
+Flask~=2.1.2
+SQLAlchemy~=1.4.37

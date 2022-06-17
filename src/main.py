@@ -21,8 +21,8 @@ def add_contributor(name: str, role: str):
     """
     Add New Contributor To Project
     """
-    typer.echo(f"Adding {name} To Project...")
     try:
+        typer.echo(f"Adding {name} To Project...")
         new_contributor = m.ContributorsDB.create(NAME=name, ROLE=role, DELETED=False)
         new_contributor.save()
         logger.info(
@@ -42,15 +42,13 @@ def delete_contributor(name: str):
     """
     Deletes Contributor and Associated Tasks
     """
-    typer.echo(f"Deleting {name} From Project...")
-    test_list = []
+    task_list = []
     try:
+        typer.echo(f"Deleting {name} From Project...")
         contributor = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
         contributor.DELETED = True
-        logger.info(
-            f"Deleted: " f"{contributor.NAME, contributor.ROLE, contributor.DELETED}"
-        )
-        test_list.append(contributor.DELETED)
+        contributor.save()
+        logger.info(f"Deleted: " f"{contributor.NAME}")
         task_query = (
             m.TasksDb.select(m.TasksDb, m.ContributorsDB)
             .join(m.ContributorsDB)
@@ -59,15 +57,28 @@ def delete_contributor(name: str):
         if len(task_query) > 0:
             for row in task_query:
                 row.DELETED = True
-                test_list.append(row.DELETED)
+                row.save()
+                task_list.append(row.DELETED)
             logger.info(f"{len(task_query)} Task(s) Owned By {name} Deleted")
-        return test_list
+        return contributor, task_list
     except pw.DoesNotExist:
         logger.error(f"'{name}' Not Found in DB")
         return False
     except Exception as error:  # pragma: no cover
         logger.error(error)
         return False
+
+
+@app.command(short_help="View All Contributors In DB")
+def view_contributors():
+    """View All Contributors In DB"""
+    contributors = []
+    query = m.ContributorsDB.select()
+    for i in query:
+        logger.info(f"{i.NAME, i.ROLE, i.DELETED}")
+        cont = (i.NAME, i.ROLE, i.DELETED)
+        contributors.append(cont)
+    return contributors
 
 
 @app.command(short_help="Add New Task To Project")
@@ -120,7 +131,7 @@ def add_task(
     short_help="Updates Task Information. "
     "Requires Task Num and At Least One Optional Arg"
 )
-def update_task(
+def update_task( #todo update due date
     task_num: str,
     task_name: str = None,
     task_description: str = None,
@@ -217,9 +228,7 @@ def list_tasks(sort="Num"):
         "FINISHED",
         "DELETED",
     ]
-    if str(sort).upper() not in sorts:
-        typer.echo(f"Sorting On Num...")
-    else:
+    typer.echo(f"Sorting On Num...") if str(sort).upper() not in sorts else \
         typer.echo(f"Sorting On {sort}...")
     if str(sort).upper() == "NUM":
         query = m.TasksDb.select().order_by(m.TasksDb.NUM)
@@ -257,7 +266,6 @@ def list_tasks(sort="Num"):
             i.DELETED,
         ]
         table.add_row(row)
-        # logger.info(row)
         test_list.append(row)
     print(table.draw())
     return test_list
@@ -325,3 +333,6 @@ if __name__ == "__main__":
     app()
     m.db.close()
     sys.exit()
+
+#todo Task name and task description are mandatory when adding a new task. All other
+# fields are optional, and can be added via the command line.
