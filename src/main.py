@@ -1,8 +1,7 @@
 """
-main driver for a simple social network project
+main driver for a To-Do List
 """
 import datetime
-import sys
 from texttable import Texttable
 from loguru import logger
 import peewee as pw
@@ -336,7 +335,3 @@ if __name__ == "__main__":
     m.create_db()
     app()
     m.db.close()
-    sys.exit()
-
-#todo Task name and task description are mandatory when adding a new task. All other
-# fields are optional, and can be added via the command line.

@@ -1,3 +1,4 @@
+"""API for To-Do List"""
 from flask import Flask, render_template
 from flask_restful import Resource, Api
 import models as m
@@ -8,8 +9,16 @@ db = m.db
 app = Flask(__name__)
 
 
+@app.route("/")
+def home():
+    """Defines Home Screen"""
+    return render_template("index.html")
+
+
 class Contributors(Resource):
+    """Class For Contributors Method"""
     def get(self):
+        """Shows All Contributors"""
         query = m.ContributorsDB.select()
         result = {
             "Contributors": [
@@ -21,7 +30,10 @@ class Contributors(Resource):
 
 
 class Profile(Resource):
+    """Class for Profiling Method"""
+    @staticmethod
     def get(self, name):
+        """Shows A Contributor's Profile And Task List"""
         c = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
         tasks = []
         task_query = (
@@ -51,27 +63,21 @@ class Profile(Resource):
 
 
 class List(Resource):
+    """Defines List Sorting Pages"""
     def get(self, sort):
+        """Retrieves Sorted Task List From main.py"""
         table = list_tasks(sort=sort)
         results = {f"Tasks Sorted On {str(sort).title()}": [table]}
         return jsonify(results)
 
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-
 def main():
     m.create_db()
-
     api = Api(app)
     api.add_resource(Contributors, "/contributors/")
-    api.add_resource(Profile,"/contributors/<name>/")
+    api.add_resource(Profile, "/contributors/<name>/")
     api.add_resource(List, "/tasks/<sort>/")
-
     app.run(port=5000, debug=True)
-
     db.close()
 
 
