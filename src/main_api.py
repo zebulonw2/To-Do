@@ -20,27 +20,6 @@ class Contributors(Resource):
         return jsonify(result)
 
 
-class Tasks(Resource):
-    def get(self):
-        tasks = []
-        query = m.TasksDb.select()
-        for i in query:
-            row = (
-                i.NUM,
-                str(i.OWNER),
-                i.NAME,
-                i.DESCRIPTION,
-                i.PRIORITY,
-                i.START,
-                i.DUE,
-                i.FINISHED,
-                i.DELETED,
-            )
-            tasks.append(row)
-        result = {"Tasks": [tasks]}
-        return jsonify(result)
-
-
 class Profile(Resource):
     def get(self, name):
         c = m.ContributorsDB.get(m.ContributorsDB.NAME == name)
@@ -88,13 +67,8 @@ def main():
 
     api = Api(app)
     api.add_resource(Contributors, "/contributors/")
-    api.add_resource(Tasks, "/tasks/")
-    api.add_resource(
-        Profile,
-        "/contributors/<name>/",
-        "/tasks/<name>/",
-    )
-    api.add_resource(List, "/tasks/sort/<sort>/")
+    api.add_resource(Profile,"/contributors/<name>/")
+    api.add_resource(List, "/tasks/<sort>/")
 
     app.run(port=5000, debug=True)
 
