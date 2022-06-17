@@ -131,11 +131,12 @@ def add_task(
     short_help="Updates Task Information. "
     "Requires Task Num and At Least One Optional Arg"
 )
-def update_task( #todo update due date
+def update_task(
     task_num: str,
     task_name: str = None,
     task_description: str = None,
     priority: str = None,
+    due: str = None,
 ):
     """
     Updates Task Information. Requires Task
@@ -151,11 +152,14 @@ def update_task( #todo update due date
         if priority:
             val_priority(priority)
             row.PRIORITY = priority
+        if due:
+            val_due(due, row.START)
+            row.DUE = due
         row.save()
         logger.info(
             f"Task '{task_num}' Changed. "
             f"Name: '{row.NAME}' Description: {row.DESCRIPTION} "
-            f"Priority: '{row.PRIORITY}'"
+            f"Priority: '{row.PRIORITY}' Due: {row.DUE}"
         )
         return row
     except pw.DoesNotExist:
@@ -211,7 +215,7 @@ def delete_task(task_num):
     "Num (Default), Owner, Name, Description, "
     "Priority, Start, Due, Finished, Deleted"
 )
-def list_tasks(sort="Num"):
+def list_tasks(sort="NUM"):
     """
     Lists Task Sorted On Keyword. Options:
     Num (Default), Owner, Name, Description,

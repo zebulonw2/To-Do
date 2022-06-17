@@ -130,10 +130,12 @@ class TestUpdate(unittest.TestCase):
             task_name="new_name",
             task_description="new_description",
             priority="low",
+            due="2023-01-01",
         )
         assert row.NAME == "new_name"
         assert row.DESCRIPTION == "new_description"
         assert row.PRIORITY == "low"
+        assert row.DUE == "2023-01-01"
 
     def test_update_priority_bad(self):
         """tests update with bad priority format"""

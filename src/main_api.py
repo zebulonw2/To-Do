@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_restful import Resource, Api
 import models as m
+from main import list_tasks
 from flask import jsonify
 
 db = m.db
@@ -15,7 +16,27 @@ class Contributors(Resource):
                 for i in query
             ]
         }
-        db.close()
+        return jsonify(result)
+
+
+class Tasks(Resource):
+    def get(self):
+        tasks = []
+        query = m.TasksDb.select()
+        for i in query:
+            row = (
+                i.NUM,
+                str(i.OWNER),
+                i.NAME,
+                i.DESCRIPTION,
+                i.PRIORITY,
+                i.START,
+                i.DUE,
+                i.FINISHED,
+                i.DELETED,
+            )
+            tasks.append(row)
+        result = {"Tasks": [tasks]}
         return jsonify(result)
 
 
@@ -49,88 +70,11 @@ class Profile(Resource):
         return jsonify(result)
 
 
-class Tasks(Resource):
-    def get(self):
-        tasks = []
-        query = m.TasksDb.select()
-        for i in query:
-            row = (
-                i.NUM,
-                str(i.OWNER),
-                i.NAME,
-                i.DESCRIPTION,
-                i.PRIORITY,
-                i.START,
-                i.DUE,
-                i.FINISHED,
-                i.DELETED,
-            )
-            tasks.append(row)
-        result = {"Tasks": [tasks]}
-        return jsonify(result)
-
-
-class Priority(Resource):
-    def get(self):
-        tasks = []
-        query = m.TasksDb.select().s
-        for i in query:
-            row = (
-                i.NUM,
-                str(i.OWNER),
-                i.NAME,
-                i.DESCRIPTION,
-                i.PRIORITY,
-                i.START,
-                i.DUE,
-                i.FINISHED,
-                i.DELETED,
-            )
-            tasks.append(row)
-        result = {"Tasks": [tasks]}
-        return jsonify(result)
-
-
-class Finished(Resource):
-    def get(self):
-        tasks = []
-        query = m.TasksDb.select().where(m.TasksDb.FINISHED is True)
-        for i in query:
-            row = (
-                i.NUM,
-                str(i.OWNER),
-                i.NAME,
-                i.DESCRIPTION,
-                i.PRIORITY,
-                i.START,
-                i.DUE,
-                i.FINISHED,
-                i.DELETED,
-            )
-            tasks.append(row)
-        result = {"Finished Tasks": [tasks]}
-        return jsonify(result)
-
-
-class Deleted(Resource):
-    def get(self):
-        tasks = []
-        query = m.TasksDb.select().where(m.TasksDb.DELETED is True)
-        for i in query:
-            row = (
-                i.NUM,
-                str(i.OWNER),
-                i.NAME,
-                i.DESCRIPTION,
-                i.PRIORITY,
-                i.START,
-                i.DUE,
-                i.FINISHED,
-                i.DELETED,
-            )
-            tasks.append(row)
-        result = {"Deleted Tasks": [tasks]}
-        return jsonify(result)
+class List(Resource):
+    def get(self, sort):
+        table = list_tasks(sort=sort)
+        results = {f"Tasks Sorted On {sort}": [table]}
+        return jsonify(results)
 
 
 def main():
@@ -138,20 +82,21 @@ def main():
     app = Flask(__name__)
 
     api = Api(app)
-    api.add_resource(Contributors, "/contributors")
-    api.add_resource(Profile, "/contributors/<name>", "/tasks/<name>")
-    api.add_resource(Tasks, "/tasks")
-    api.add_resource(Priority, "tasks/priority")
-    api.add_resource(Finished, "tasks/finished")
-    api.add_resource(Deleted, "tasks/deleted")
+    api.add_resource(Contributors, "/contributors", "/contributors/")
+    api.add_resource(Tasks, "/tasks", "/tasks/")
+    api.add_resource(
+        Profile,
+        "/contributors/<name>",
+        "/contributors/<name>/",
+        "/tasks/<name>",
+        "/tasks/<name>/",
+    )
+    api.add_resource(List, "/tasks/sort/<sort>", "/tasks/sort/<sort>/")
 
-    app.run(port=5000)
+    app.run(port=5000, debug=True)
 
     db.close()
 
 
 if __name__ == "__main__":
     main()
-
-#todo add /deleted, /finished, /priority, NUM", "OWNER", "NAME", "DESCRIPTION",
-# "PRIORITY", "START", "DUE", "FINISHED", "DELETED",
